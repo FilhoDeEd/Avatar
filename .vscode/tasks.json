@@ -11,7 +11,7 @@
 				"${file}",
 				"${workspaceFolder}/source/elemento.c",
 				"-o",
-				"${workspaceFolder}/bin/${fileBasenameNoExtension}"
+				"${workspaceFolder}/bin/${fileBasenameNoExtension}.exe"
 			],
 			"options": {
 				"cwd": "${fileDirname}"
