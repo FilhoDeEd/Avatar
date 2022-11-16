@@ -11,6 +11,7 @@
 				"${file}",
 				"${workspaceFolder}/source/elemento.c",
 				"${workspaceFolder}/source/listaDinamica.c",
+				"${workspaceFolder}/source/fisicaDinamica.c",
 				"-o",
 				"${workspaceFolder}/bin/${fileBasenameNoExtension}.exe"
 			],
