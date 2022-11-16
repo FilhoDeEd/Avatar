@@ -10,6 +10,7 @@
 				"-g",
 				"${file}",
 				"${workspaceFolder}/source/elemento.c",
+				"${workspaceFolder}/source/listaDinamica.c",
 				"-o",
 				"${workspaceFolder}/bin/${fileBasenameNoExtension}.exe"
 			],
