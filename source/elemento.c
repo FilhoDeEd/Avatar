@@ -1,8 +1,19 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <pthread.h>
 #include "elemento.h"
+#include "fisicaDinamica.h"
 
-void teste()
+typedef struct elemento
 {
-    printf("Teste\n");
+    char tipo;
+    Lista* elementoForteContra;
+    Lista* elementoFracoContra;
+    Unidade* respectivaUnidade;
+
+}Elemento;
+
+void* thrElemento(void* args)
+{
+
 }
