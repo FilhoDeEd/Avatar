@@ -4,16 +4,14 @@
 		{
 			"type": "cppbuild",
 			"label": "C/C++: gcc arquivo de build ativo",
-			"command": "/usr/bin/gcc",
+			"command": "gcc",
 			"args": [
-				"-fdiagnostics-color=always",
-				"-g",
-				"${file}",
+				"${workspaceFolder}/source/main.c",
 				"${workspaceFolder}/source/elemento.c",
 				"${workspaceFolder}/source/listaDinamica.c",
 				"${workspaceFolder}/source/fisicaDinamica.c",
 				"-o",
-				"${workspaceFolder}/bin/${fileBasenameNoExtension}.exe"
+				"${workspaceFolder}/bin/main.exe"
 			],
 			"options": {
 				"cwd": "${fileDirname}"
@@ -22,7 +20,7 @@
 				"$gcc"
 			],
 			"group": "build",
-			"detail": "compilador: /usr/bin/gcc"
+			"detail": "compilador: gcc"
 		}
 	]
 }
