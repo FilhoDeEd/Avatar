@@ -2,26 +2,14 @@
 #include <stdio.h>
 #include "listaDinamica.h"
 
-typedef struct unidade
-{
-    Ponto dado;
-    struct unidade* prox;
-}Unidade;
-
-typedef struct lista
-{
-    Unidade* inicio;
-    Unidade* final;
-    int qtd;
-}Lista;
-
-Ponto init_ponto(double x, double y, int ID)
+Ponto init_ponto(double x, double y, int ID, char cor)
 {
     Ponto p;
 
     p.x = x;
     p.y = y;
     p.ID = ID;
+    p.cor = cor;
 
     return p;
 }

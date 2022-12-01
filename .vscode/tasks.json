@@ -10,6 +10,7 @@
 				"${workspaceFolder}/source/elemento.c",
 				"${workspaceFolder}/source/listaDinamica.c",
 				"${workspaceFolder}/source/fisicaDinamica.c",
+				"-lm",
 				"-o",
 				"${workspaceFolder}/bin/main.exe"
 			],

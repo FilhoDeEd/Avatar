@@ -4,15 +4,26 @@
 typedef struct ponto
 {
     int ID;
+    char cor;
     double x;
     double y;
 }Ponto;
 
-typedef struct unidade Unidade;
-typedef struct lista Lista;
+typedef struct unidade
+{
+    Ponto dado;
+    struct unidade* prox;
+}Unidade;
+
+typedef struct lista
+{
+    Unidade* inicio;
+    Unidade* final;
+    int qtd;
+}Lista;
 
 //Inicializa um ponto
-Ponto init_ponto(double x, double y, int ID);
+Ponto init_ponto(double x, double y, int ID, char cor);
 
 //Cria uma unidade da lista
 Unidade* cria_unidade(Ponto p);
