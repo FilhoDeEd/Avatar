@@ -9,7 +9,7 @@ void calcula_velocidade(double velocidade[2], double aceleracao[2]);
 
 void calcula_posicao(double posicao[2], double velocidade[2]);
 
-//Calcula distância entre dois pontos
+//Retorna a distância entre dois pontos
 double calcula_distancia(double posicao1[2], double posicao2[2]);
 
 #endif /* FISICADINAMICA_H */
