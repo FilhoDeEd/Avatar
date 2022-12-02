@@ -1,32 +1,28 @@
 #include <math.h>
 #include "fisicaDinamica.h"
 
-#define consAtracao 1
-#define consRepulsao 0.1
-#define dt 0.0005
-
-void calcula_forca(double forca[2], double constante, double distacia_quadrado, double distancia_horizon, double distancia_verti)
+void calcula_forca(double forca[2], double constante, double dist, double distancia_horizon, double distancia_verti)
 {
-    forca[0]=((constante)/distacia_quadrado)*(distancia_horizon/sqrt(distacia_quadrado)); //cosseno
-    forca[1]=((constante)/distacia_quadrado)*(distancia_verti/sqrt(distacia_quadrado)); //seno
+    forca[0] = ((constante)/dist*dist)*(distancia_horizon/dist); //cosseno
+    forca[1] = ((constante)/dist*dist)*(distancia_verti/dist); //seno
 }
 
 void calcula_aceleracao(double aceleracao[2], double forca[2], double massa)
 {
-    aceleracao[0]= forca[0]/massa;
-    aceleracao[1]= forca[1]/massa;
+    aceleracao[0] = forca[0]/massa;
+    aceleracao[1] = forca[1]/massa;
 }
 
-void calcula_velocidade(double velocidade[2], double aceleracao[2])
+void calcula_velocidade(double velocidade[2], double aceleracao[2], double dt)
 {
-    velocidade[0]= velocidade[0]+aceleracao[0]*dt;
-    velocidade[1]= velocidade[1]+aceleracao[1]*dt;
+    velocidade[0] = velocidade[0] + aceleracao[0]*dt;
+    velocidade[1] = velocidade[1] + aceleracao[1]*dt;
 }
 
-void calcula_posicao(double posicao[2], double velocidade[2])
+void calcula_posicao(double posicao[2], double velocidade[2], double dt)
 {
-    posicao[0]= posicao[0]+velocidade[0]*dt;
-    posicao[1]= posicao[1]+velocidade[1]*dt;
+    posicao[0] = posicao[0] + velocidade[0]*dt;
+    posicao[1] = posicao[1] + velocidade[1]*dt;
 }
 
 double calcula_distancia(double posicao1[2], double posicao2[2])
