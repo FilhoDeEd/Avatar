@@ -11,12 +11,6 @@
 #define REPULSAO -0.1
 #define dt 0.042
 
-typedef struct argumentos
-{
-    char corInicial;
-    Unidade* respectivaUnidade;
-}Args;
-
 typedef struct elemento
 {
     Lista* elementoForteContra;
@@ -70,12 +64,11 @@ void trocaUnidadeListas(Unidade *uni)
     }
 }
 
-void* thrElemento(void* endeArgs)
+void* thrElemento(void* argsThrElemento)
 {
-    //Argumentos
-    Args* args = (Args*) endeArgs;
-    char corInicial = args->corInicial;
-    Unidade* respectivaUnidade = args->respectivaUnidade;
+    //Argumento
+    Unidade* respectivaUnidade = (Unidade*) argsThrElemento;
+    char corInicial = respectivaUnidade->dado.cor;
 
     //Declarando e inicializando elemento
     Elemento elemento;
@@ -101,9 +94,17 @@ void* thrElemento(void* endeArgs)
 
     //-----------------------------------------------------------------------------------//
 
-    //Repita até ser sinalizado para parar
-    while(1)
+    //Repita até a monitora interromper a simulação
+    while(!pararSimulacao)
     {
+        //Esperando a thread monitora dar largada
+        pthread_mutex_lock(&mutexLargada);
+        while(!largada)
+        {
+            pthread_cond_wait(&condLargada,&mutexLargada);
+        }
+        pthread_mutex_unlock(&mutexLargada);
+
         //----------------------Verificar colisão entre elementos----------------------//
 
             //Se houver escritor, espere
@@ -249,12 +250,37 @@ void* thrElemento(void* endeArgs)
         calcula_velocidade(velocidadeAtualElemento,aceleracao,dt);
         calcula_posicao(posicaoAtualElemento,velocidadeAtualElemento,dt);
 
-            //Atualizando a posição na unidade respectiva
+            //Atualizando a posição na respectiva unidade
         elemento.respectivaUnidade->dado.x = posicaoAtualElemento[0];
         elemento.respectivaUnidade->dado.y = posicaoAtualElemento[1];
 
         //----------------------Escreve instância do ponto no arquivo----------------------//
 
-        
+            //Acesso exclusivo para escrever no arquivo
+        pthread_mutex_lock(&mutexArquivo);
+        fseek(arqRastro,0,SEEK_END);
+        Ponto pt = elemento.respectivaUnidade->dado;
+        int codeCor;
+        switch (pt.cor)
+        {
+            case FOGO:
+                    codeCor = 0;
+                break;
+            case AGUA:
+                    codeCor = 1;
+                break;
+            case GRAMA:
+                    codeCor = 2;
+                break;
+        }
+        fprintf(arqRastro,"%i,%i,%.5f,%.5f,",pt.ID,codeCor,pt.x,pt.y);
+        pthread_mutex_unlock(&mutexArquivo);
     }
+
+    pthread_exit(NULL);
+}
+
+void* thrMonitora(void* args)
+{
+
 }
