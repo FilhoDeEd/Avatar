@@ -11,6 +11,7 @@
 				"${workspaceFolder}/source/listaDinamica.c",
 				"${workspaceFolder}/source/fisicaDinamica.c",
 				"-lm",
+				"-lpthread",
 				"-o",
 				"${workspaceFolder}/bin/main.exe"
 			],
