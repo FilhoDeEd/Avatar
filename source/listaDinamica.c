@@ -16,14 +16,14 @@ Ponto init_ponto(double x, double y, int ID, char cor)
 
 Unidade* cria_unidade(Ponto p)
 {
-    Unidade* un = (Unidade*) malloc(sizeof(Unidade));
-    if(un != NULL)
+    Unidade* uni = (Unidade*) malloc(sizeof(Unidade));
+    if(uni != NULL)
     {
-        un->dado = p;
-        un->prox = NULL;
+        uni->dado = p;
+        uni->prox = NULL;
     }
 
-    return un;
+    return uni;
 }
 
 void libera_unidade(Unidade* uni)
@@ -109,6 +109,8 @@ int remove_uni_lista(Lista* li, int ID)
     if(no == li->inicio) li->inicio = no->prox;
     else anterior->prox = no->prox;
     
+    no->prox = NULL;
+
     (li->qtd)--;
     return 1;
 }
