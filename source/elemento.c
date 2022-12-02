@@ -3,15 +3,12 @@
 #include <pthread.h>
 #include "elemento.h"
 #include "fisicaDinamica.h"
-#define FOGO 'f'
-#define AGUA 'a'
-#define GRAMA 'g'
 #define RAIO 10.0
 
 typedef struct argumentos
 {
     char corInicial;
-    Unidade* unidadePosicao;
+    Unidade* respectivaUnidade;
 }Args;
 
 typedef struct elemento
@@ -21,6 +18,7 @@ typedef struct elemento
     Unidade* respectivaUnidade;
 }Elemento;
 
+//Não crítico. Modifica os campos de Elemento e a cor
 void trocaElemento(char cor, Elemento* elemento)
 {
     switch(cor)
@@ -43,24 +41,25 @@ void trocaElemento(char cor, Elemento* elemento)
     }
 }
 
-void trocaUnidadeListas(Unidade *un)
+//Crítico. Troca uma unidade de uma lista para outra baseado na cor e no ID
+void trocaUnidadeListas(Unidade *uni)
 {
-    int ID = un->dado.ID;
-    char cor = un->dado.cor;
+    int ID = uni->dado.ID;
+    char cor = uni->dado.cor;
 
     switch(cor)
     {
         case FOGO:
                 remove_uni_lista(ListaFogo,ID);
-                insere_uni_lista_final(ListaAgua,un);
+                insere_uni_lista_final(ListaAgua,uni);
             break;
         case AGUA:
                 remove_uni_lista(ListaAgua,ID);
-                insere_uni_lista_final(ListaGrama,un);
+                insere_uni_lista_final(ListaGrama,uni);
             break;
         case GRAMA:
                 remove_uni_lista(ListaGrama,ID);
-                insere_uni_lista_final(ListaFogo,un);
+                insere_uni_lista_final(ListaFogo,uni);
             break;
     }
 }
@@ -70,21 +69,24 @@ void* thrElemento(void* endeArgs)
     Args* args = (Args*) endeArgs;
 
     char corInicial = args->corInicial;
-    Unidade* unidadePosicao = args->unidadePosicao;
+    Unidade* respectivaUnidade = args->respectivaUnidade;
     Elemento elemento;
 
-    //Inicia elemento
+    ///Iniciando elemento
     trocaElemento(corInicial,&elemento);
+    elemento.respectivaUnidade = respectivaUnidade;
+    ///fim
 
     ///Verificando se deve trocar de elemento
-    Unidade* aux = elemento.elementoFracoContra->inicio;
-    double posicaoAtual[2];
-    double posicaoOutros[2];
+        //Variáveis necessárias
+    Unidade* unidadeElementoFracoContra = elemento.elementoFracoContra->inicio;
+    double posicaoAtualElemento[2];
+    double posicaoOutrosElementos[2];
     double dist;
-    posicaoAtual[0] = elemento.respectivaUnidade->dado.x;
-    posicaoAtual[1] = elemento.respectivaUnidade->dado.y;
+    posicaoAtualElemento[0] = elemento.respectivaUnidade->dado.x;
+    posicaoAtualElemento[1] = elemento.respectivaUnidade->dado.y;
 
-    //Se houver escritor, espera
+        //Se houver escritor, espera
     pthread_mutex_lock(&mutexTemEscritor);
     while(temEscritor)
     {
@@ -92,19 +94,21 @@ void* thrElemento(void* endeArgs)
     }
     pthread_mutex_unlock(&mutexTemEscritor);
 
+        //Há mais um leitor. Se for o primeiro, bloqueie as listas
     pthread_mutex_lock(&mutexNumLeitores);
     numLeitores++;
     if(numLeitores == 1) pthread_mutex_lock(&mutexListas);
     pthread_mutex_unlock(&mutexNumLeitores);
 
-    while(aux != NULL)
+        //Lendo a lista e utilizando seus dados
+    while(unidadeElementoFracoContra != NULL)
     {
-        posicaoOutros[0] = aux->dado.x;
-        posicaoOutros[1] = aux->dado.y;
+        posicaoOutrosElementos[0] = unidadeElementoFracoContra->dado.x;
+        posicaoOutrosElementos[1] = unidadeElementoFracoContra->dado.y;
 
-        dist = calcula_distancia(posicaoAtual,posicaoOutros);
+        dist = calcula_distancia(posicaoAtualElemento,posicaoOutrosElementos);
 
-        //Condição de colisão
+        //Condição de colisão entre dois círculos
         if(dist < 2*RAIO)
         {
             //Sinalizar que há um novo escritor
@@ -112,10 +116,10 @@ void* thrElemento(void* endeArgs)
             temEscritor++;
             pthread_mutex_unlock(&mutexTemEscritor);
 
-            //Hora de escrever
+            //Hora de escrever. É necessário acesso exclusivo às listas
             pthread_mutex_lock(&mutexListas);
             trocaUnidadeListas(elemento.respectivaUnidade);
-            trocaElemento(aux->dado.cor,&elemento);
+            trocaElemento(unidadeElementoFracoContra->dado.cor,&elemento);
             pthread_mutex_unlock(&mutexListas);
 
             //Sinalizar que deixou de ser escritor
@@ -126,14 +130,19 @@ void* thrElemento(void* endeArgs)
             //Acordar os leitores em espera
             pthread_cond_signal(&condEscritor);
 
+            //Pode sair. Já foi detectado uma colisão
             break;
         }
-    }
 
+        //Vericar o próximo da lista
+        unidadeElementoFracoContra = unidadeElementoFracoContra->prox;
+    }
+        //Há menos um leitor. Se for o último, libere as listas
     pthread_mutex_lock(&mutexNumLeitores);
     numLeitores--;
     if(numLeitores == 0) pthread_mutex_unlock(&mutexListas);
     pthread_mutex_unlock(&mutexNumLeitores);
-    
-    //Calcular força: 
+    ///fim
+
+    ///Calcular movimento do elemento 
 }
