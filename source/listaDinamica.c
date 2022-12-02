@@ -28,9 +28,9 @@ Unidade* cria_unidade(Ponto p)
 
 void libera_unidade(Unidade* uni)
 {
-    if(un != NULL)
+    if(uni != NULL)
     {
-        free(un);
+        free(uni);
     }
 }
 
