@@ -29,7 +29,7 @@ Ponto init_ponto(double x, double y, int ID, char cor);
 Unidade* cria_unidade(Ponto p);
 
 //Exclui uma unidade (remova da lista antes de excluir)
-void libera_unidade(Unidade* un);
+void libera_unidade(Unidade* uni);
 
 //Cria a lista
 Lista* cria_lista();

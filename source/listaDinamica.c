@@ -26,7 +26,7 @@ Unidade* cria_unidade(Ponto p)
     return un;
 }
 
-void libera_unidade(Unidade* un)
+void libera_unidade(Unidade* uni)
 {
     if(un != NULL)
     {
