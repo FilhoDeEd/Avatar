@@ -31,9 +31,9 @@ int main()
     }
 
     //Inicializando os recursos para controlar leitores e escritores das listas
-    pthread_mutex_init(&mutexTemEscritor, NULL);
-    pthread_mutex_init(&mutexNumLeitores, NULL);
-    pthread_mutex_init(&mutexListas, NULL);
+    pthread_mutex_init(&mutexTemEscritor,NULL);
+    pthread_mutex_init(&mutexNumLeitores,NULL);
+    pthread_mutex_init(&mutexListas,NULL);
     pthread_cond_init(&condEscritor,NULL); //pode ser null?
     temEscritor = 0;
     numLeitores = 0;
