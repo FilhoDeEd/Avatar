@@ -3,10 +3,15 @@
 #ifndef ELEMENTO_H
 #define ELEMENTO_H
 
+//Constantes para cor
+#define FOGO 'f'
+#define AGUA 'a'
+#define GRAMA 'g'
+
 //Listas para armazenar a posição de todos os pontos
-    Lista* ListaFogo;
-    Lista* ListaAgua;
-    Lista* ListaGrama;
+Lista* ListaFogo;
+Lista* ListaAgua;
+Lista* ListaGrama;
 
 //Controlar leitores e escritores das listas
 pthread_mutex_t mutexTemEscritor;
