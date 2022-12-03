@@ -5,12 +5,12 @@
 #include "fisicaDinamica.h"
 
 //Algumas constantes do movimento
-#define RAIO 10.0
-#define MASSA 5.0
-#define ATRACAO 10.0
-#define REPULSAO -0.1
-#define dt 1
-//0.042
+#define RAIO 50.0
+#define MASSA 1
+#define ATRACAO 100.0
+#define REPULSAO 0.0
+#define dt 0.1
+
 typedef struct elemento
 {
     Lista* elementoForteContra;
@@ -87,6 +87,44 @@ void destruirUnidade(Unidade *uni)
     }
 }
 
+void entraLeitor()
+{
+    pthread_mutex_lock(&mutexGuardaDownLeitores); //Apenas uma thread esperando em mutexTemEscritor
+        pthread_mutex_lock(&mutexTemEscritor); //Se tem leitor, espera
+            pthread_mutex_lock(&mutexNumLeitores);
+                numLeitores++;
+                if(numLeitores == 1) pthread_mutex_lock(&mutexListas); //Se for o 1º, bloqueia listas
+            pthread_mutex_unlock(&mutexNumLeitores);
+        pthread_mutex_unlock(&mutexTemEscritor);
+    pthread_mutex_unlock(&mutexGuardaDownLeitores);
+}
+
+void saiLeitor()
+{
+    pthread_mutex_lock(&mutexNumLeitores);
+        numLeitores--;
+        if(numLeitores == 0) pthread_mutex_unlock(&mutexListas); //Se for o último, libera listas
+    pthread_mutex_unlock(&mutexNumLeitores);
+}
+
+void entraEscritor()
+{
+    pthread_mutex_lock(&mutexNumEscritores);
+        numEscritores++;
+        if(numEscritores == 1) pthread_mutex_lock(&mutexTemEscritor); //Se for o 1º, bloqueia novos leitores
+    pthread_mutex_unlock(&mutexNumEscritores);
+    pthread_mutex_lock(&mutexListas);
+}
+
+void saiEscritor()
+{
+    pthread_mutex_unlock(&mutexListas);
+    pthread_mutex_lock(&mutexNumEscritores);
+        numEscritores--;
+        if(numEscritores == 0) pthread_mutex_unlock(&mutexTemEscritor); //Se for o último, libera novos leitores
+    pthread_mutex_unlock(&mutexNumEscritores);
+}
+
 void* thrElemento(void* argsThrElemento)
 {
     //Argumento
@@ -114,37 +152,29 @@ void* thrElemento(void* argsThrElemento)
     double forca[2];
     double forcaResultante[2];
     double aceleracao[2];
-    double moduloX;
-    double moduloY;
+    double X;
+    double Y;
 
     //-----------------------------------------------------------------------------------//
 
+    //Esperando a thread monitora dar largada
+    while(largada == 0);
+
     //Repita até a monitora interromper a simulação
-    while(!pararSimulacao)
+    do
     {
-        //Esperando a thread monitora dar largada
-        pthread_mutex_lock(&mutexLargada);
-        while(!largada)
-        {
-            pthread_cond_wait(&condLargada,&mutexLargada);
-        }
-        pthread_mutex_unlock(&mutexLargada);
+        //----------------------Escreve instância do ponto no arquivo----------------------//
+
+            //Acesso exclusivo para escrever no arquivo
+        Ponto pt = elemento.respectivaUnidade->dado;
+        pthread_mutex_lock(&mutexArquivo);
+        fseek(arqRastro,0,SEEK_END);
+        fprintf(arqRastro,"%i,%c,%.5f,%.5f\n",pt.ID,pt.cor,pt.x,pt.y);
+        pthread_mutex_unlock(&mutexArquivo);
 
         //----------------------Verificar colisão entre elementos----------------------//
 
-            //Se houver escritor, espere
-        pthread_mutex_lock(&mutexTemEscritor);
-        while(temEscritor)
-        {
-            pthread_cond_wait(&condEscritor,&mutexTemEscritor);
-        }
-        pthread_mutex_unlock(&mutexTemEscritor);
-
-            //Há mais um leitor. Se for o primeiro, bloqueie as listas
-        pthread_mutex_lock(&mutexNumLeitores);
-        numLeitores++;
-        if(numLeitores == 1) pthread_mutex_lock(&mutexListas);
-        pthread_mutex_unlock(&mutexNumLeitores);
+        entraLeitor();
 
             //Lendo a lista e utilizando seus dados
         unidadeElementoFracoContra = elemento.elementoFracoContra->inicio;
@@ -158,30 +188,11 @@ void* thrElemento(void* argsThrElemento)
             //Condição de colisão entre dois círculos
             if(dist < 2*RAIO)
             {   
-                //Há menos um leitor. Se for o último, libere as listas
-                pthread_mutex_lock(&mutexNumLeitores);
-                numLeitores--;
-                if(numLeitores == 0) pthread_mutex_unlock(&mutexListas);
-                pthread_mutex_unlock(&mutexNumLeitores);
-
-                //Sinalizar que há um novo escritor
-                pthread_mutex_lock(&mutexTemEscritor);
-                temEscritor++;
-                pthread_mutex_unlock(&mutexTemEscritor);
-
-                //Hora de escrever. É necessário acesso exclusivo às listas
-                pthread_mutex_lock(&mutexListas);
+                saiLeitor();
+                entraEscritor();
                 trocaUnidadeListas(elemento.respectivaUnidade);
                 trocaElemento(unidadeElementoFracoContra->dado.cor,&elemento);
-                pthread_mutex_unlock(&mutexListas);
-
-                //Sinalizar que deixou de ser escritor
-                pthread_mutex_lock(&mutexTemEscritor);
-                temEscritor--;
-                pthread_mutex_unlock(&mutexTemEscritor);
-
-                //Acordar os leitores em espera
-                pthread_cond_signal(&condEscritor);
+                saiEscritor();
 
                 //Pode sair. Já foi detectado uma colisão
                 break;
@@ -191,34 +202,15 @@ void* thrElemento(void* argsThrElemento)
             unidadeElementoFracoContra = unidadeElementoFracoContra->prox;
         }
 
-        if(unidadeElementoFracoContra == NULL)
-        {
-            //Há menos um leitor. Se for o último, libere as listas
-            pthread_mutex_lock(&mutexNumLeitores);
-            numLeitores--;
-            if(numLeitores == 0) pthread_mutex_unlock(&mutexListas);
-            pthread_mutex_unlock(&mutexNumLeitores);
-        }
+        if(unidadeElementoFracoContra == NULL) saiLeitor();
 
         //----------------------Calcular movimento do elemento----------------------//
         
             //Inicializando variáveis para calcular o movimento do elemento
         forcaResultante[0] = 0.0;
-        forcaResultante[1] = 0.0; 
+        forcaResultante[1] = 0.0;
 
-            //Se houver escritor, espere
-        pthread_mutex_lock(&mutexTemEscritor);
-        while(temEscritor)
-        {
-            pthread_cond_wait(&condEscritor,&mutexTemEscritor);
-        }
-        pthread_mutex_unlock(&mutexTemEscritor);
-
-            //Há mais um leitor. Se for o primeiro, bloqueie as listas
-        pthread_mutex_lock(&mutexNumLeitores);
-        numLeitores++;
-        if(numLeitores == 1) pthread_mutex_lock(&mutexListas);
-        pthread_mutex_unlock(&mutexNumLeitores);
+        entraLeitor();
 
             //Lendo a listaForteContra e utilizando seus dados
         unidadeElementoForteContra = elemento.elementoForteContra->inicio;
@@ -264,11 +256,7 @@ void* thrElemento(void* argsThrElemento)
             unidadeElementoFracoContra = unidadeElementoFracoContra->prox;
         }
 
-            //Há menos um leitor. Se for o último, libere as listas
-        pthread_mutex_lock(&mutexNumLeitores);
-        numLeitores--;
-        if(numLeitores == 0) pthread_mutex_unlock(&mutexListas);
-        pthread_mutex_unlock(&mutexNumLeitores);
+        saiLeitor();
 
             //Calculando aceleração e atualizando velocidade e posição
         calcula_aceleracao(aceleracao,forcaResultante,MASSA);
@@ -282,74 +270,25 @@ void* thrElemento(void* argsThrElemento)
         //----------------------Verificar se partícula saiu da área de simulação----------------------//
 
             //condição para ter saído da área de simulação
-            moduloX = modulo(posicaoAtualElemento[0]);
-            moduloY = modulo(posicaoAtualElemento[1]);
-            if(moduloX > LARGURA_TELA || moduloY > ALTURA_TELA)
+            X = posicaoAtualElemento[0];
+            Y = posicaoAtualElemento[1];
+            if(X > LARGURA_TELA || Y > ALTURA_TELA || X < 0 || Y < 0)
             {
-                //Sinalizar que há um novo escritor
-                pthread_mutex_lock(&mutexTemEscritor);
-                temEscritor++;
-                pthread_mutex_unlock(&mutexTemEscritor);
-
-                //Remover e liberar unidade da thread. É necessário acesso exclusivo às lisats
-                pthread_mutex_lock(&mutexListas);
+                entraEscritor();
                 destruirUnidade(elemento.respectivaUnidade);
-                pthread_mutex_unlock(&mutexListas);
-
-                //Sinalizar que deixou de ser escritor
-                pthread_mutex_lock(&mutexTemEscritor);
-                temEscritor--;
-                pthread_mutex_unlock(&mutexTemEscritor);
-
-                //Acordar os leitores em espera
-                pthread_cond_signal(&condEscritor);
+                saiEscritor();
 
                 //Pode sair. Acabou para essa thread
                 pthread_exit(NULL);
             }
 
-        //----------------------Escreve instância do ponto no arquivo----------------------//
-
-            //Acesso exclusivo para escrever no arquivo
-        pthread_mutex_lock(&mutexArquivo);
-        fseek(arqRastro,0,SEEK_END);
-        Ponto pt = elemento.respectivaUnidade->dado;
-        int codeCor;
-        switch (pt.cor)
-        {
-            case FOGO:
-                    codeCor = 0;
-                break;
-            case AGUA:
-                    codeCor = 1;
-                break;
-            case GRAMA:
-                    codeCor = 2;
-                break;
-        }
-        fprintf(arqRastro,"%i,%i,%.5f,%.5f,",pt.ID,codeCor,pt.x,pt.y);
-        pthread_mutex_unlock(&mutexArquivo);
-    }
+    }while(pararSimulacao == 0);
 
     //----------------------Destruindo respectiva unidade----------------------//
 
-    //Sinalizar que há um novo escritor
-    pthread_mutex_lock(&mutexTemEscritor);
-    temEscritor++;
-    pthread_mutex_unlock(&mutexTemEscritor);
-
-    //Remover e liberar unidade da thread. É necessário acesso exclusivo às listas
-    pthread_mutex_lock(&mutexListas);
+    entraEscritor();
     destruirUnidade(elemento.respectivaUnidade);
-    pthread_mutex_unlock(&mutexListas);
-
-    //Sinalizar que deixou de ser escritor
-    pthread_mutex_lock(&mutexTemEscritor);
-    temEscritor--;
-    pthread_mutex_unlock(&mutexTemEscritor);
-
-    //Acordar os leitores em espera
-    pthread_cond_signal(&condEscritor);
+    saiEscritor();
 
     //Pode sair. Acabou para essa thread
     pthread_exit(NULL);
@@ -365,7 +304,6 @@ void* thrMonitora(void* args)
 
     //Dar largada as threads principais
     largada = 1;
-    pthread_cond_signal(&condLargada);
 
     //Verificar se deve interromper simulação
     while(1)
@@ -394,6 +332,10 @@ void* thrMonitora(void* args)
             break;
         }
     }
+
+    printf("Fogo Perdeu = %i\n",fogoPerdeu);
+    printf("Agua Perdeu = %i\n",aguaPerdeu);
+    printf("Grama Perdeu = %i",gramaPerdeu);
 
     pthread_exit(NULL);
 }

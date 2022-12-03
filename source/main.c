@@ -31,22 +31,19 @@ int main()
         exit(EGRAMA);
     }
 
-    //Inicializando mutexes, cond e variáveis globais para controlar leitores e escritores
-    pthread_mutex_init(&mutexTemEscritor,NULL);
+    //Inicializando mutexes e variáveis globais para controlar leitores e escritores das listas
     pthread_mutex_init(&mutexNumLeitores,NULL);
-    pthread_cond_init(&condEscritor,NULL);
-    temEscritor = 0;
-    numLeitores = 0;
-
-    //Inicializando mutex para controlar acesso às listas
+    pthread_mutex_init(&mutexNumEscritores,NULL);
+    pthread_mutex_init(&mutexGuardaDownLeitores,NULL);
+    pthread_mutex_init(&mutexTemEscritor,NULL);
     pthread_mutex_init(&mutexListas,NULL);
+    numEscritores = 0;
+    numLeitores = 0;
 
     //Inicializando mutex para controlar acesso ao arquivo de rastro
     pthread_mutex_init(&mutexArquivo,NULL);
 
-    //Inicializando mutex, cond e flags para controlar threads via monitora
-    pthread_mutex_init(&mutexLargada,NULL);
-    pthread_cond_init(&condLargada,NULL);
+    //Inicializando flags para controlar threads via monitora
     largada = 0;
     pararSimulacao = 0;
 
@@ -72,8 +69,8 @@ int main()
         randPonto.ID = i;
         randPonto.cor = FOGO;
         //Primeiro quadrante
-        randPonto.x = (float)rand()/(float)(RAND_MAX/LARGURA_TELA);
-        randPonto.y = (float)rand()/(float)(RAND_MAX/ALTURA_TELA);
+        randPonto.x = (float)rand()/(float)(RAND_MAX/(LARGURA_TELA/2.0)) + (LARGURA_TELA/2.0);
+        randPonto.y = (float)rand()/(float)(RAND_MAX/(ALTURA_TELA/2.0));
         uni = cria_unidade(randPonto);
         insere_uni_lista_final(ListaFogo, uni);
         pthread_create(&(threadsElementos[i]),NULL,thrElemento,(void*)uni);
@@ -84,8 +81,8 @@ int main()
         randPonto.ID = i;
         randPonto.cor = AGUA;
         //Segundo quadrante
-        randPonto.x = (-1.0)*(float)rand()/(float)(RAND_MAX/LARGURA_TELA);
-        randPonto.y = (float)rand()/(float)(RAND_MAX/ALTURA_TELA);
+        randPonto.x = (float)rand()/(float)(RAND_MAX/(LARGURA_TELA/2.0));
+        randPonto.y = (float)rand()/(float)(RAND_MAX/(ALTURA_TELA/2.0));
         uni = cria_unidade(randPonto);
         insere_uni_lista_final(ListaAgua, uni);
         pthread_create(&threadsElementos[i],NULL,thrElemento,(void*)uni);
@@ -94,21 +91,26 @@ int main()
     for(i = 2*NUMTHREADS/3; i < NUMTHREADS; i++)
     {
         randPonto.ID = i;
-        randPonto.cor = AGUA;
+        randPonto.cor = GRAMA;
         //Terceiro quadrante
-        randPonto.x = (-1.0)*(float)rand()/(float)(RAND_MAX/LARGURA_TELA);
-        randPonto.y = (-1.0)*(float)rand()/(float)(RAND_MAX/ALTURA_TELA);
+        randPonto.x = (float)rand()/(float)(RAND_MAX/(LARGURA_TELA/2.0)) + (LARGURA_TELA/2.0);
+        randPonto.y = (float)rand()/(float)(RAND_MAX/(ALTURA_TELA/2.0)) + (ALTURA_TELA/2.0);
         uni = cria_unidade(randPonto);
         insere_uni_lista_final(ListaGrama, uni);
         pthread_create(&threadsElementos[i],NULL,thrElemento,(void*)uni);
     }
 
-    //Chamando join para cada uma das threads principais
-    for(i = 0; i < NUMTHREADS; i++) pthread_join(threadsElementos[i],NULL);
-    
-    //Criando a thread monitora e dando join
+    //Criando a thread monitora
     pthread_t threadMonitora;
     pthread_create(&threadMonitora,NULL,thrMonitora,NULL);
+
+    //Chamando join para cada uma das threads principais
+    for(i = 0; i < NUMTHREADS; i++)
+    {
+        pthread_join(threadsElementos[i],NULL);
+    }
+
+    //Dando join
     pthread_join(threadMonitora,NULL);
 
     //Fechando o arquivo

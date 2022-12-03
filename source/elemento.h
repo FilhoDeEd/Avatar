@@ -9,11 +9,11 @@
 #define GRAMA 'g'
 
 //Constantes para dimensões da área de simulação
-#define LARGURA_TELA 1000
-#define ALTURA_TELA 800
+#define LARGURA_TELA 800.0
+#define ALTURA_TELA 600.0
 
 //Numero de threads
-#define NUMTHREADS 30
+#define NUMTHREADS 6
 
 //Listas para armazenar a posição de todos os pontos
 Lista* ListaFogo;
@@ -24,14 +24,13 @@ Lista* ListaGrama;
 FILE* arqRastro;
 
 //Controlar leitores e escritores das listas
-pthread_mutex_t mutexTemEscritor;
 pthread_mutex_t mutexNumLeitores;
-pthread_cond_t condEscritor;
-int temEscritor;
-int numLeitores;
-
-//Controlar acesso às listas
+pthread_mutex_t mutexNumEscritores;
+pthread_mutex_t mutexGuardaDownLeitores;
+pthread_mutex_t mutexTemEscritor;
 pthread_mutex_t mutexListas;
+int numEscritores;
+int numLeitores;
 
 //Controlar acesso ao arquivo
 pthread_mutex_t mutexArquivo;
