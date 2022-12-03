@@ -20,9 +20,6 @@ Lista* ListaFogo;
 Lista* ListaAgua;
 Lista* ListaGrama;
 
-//Declaração das threads
-pthread_t threadsElementos[NUMTHREADS];
-
 //Declaração do arquivo de rastro
 FILE* arqRastro;
 

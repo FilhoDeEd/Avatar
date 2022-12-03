@@ -331,10 +331,70 @@ void* thrElemento(void* argsThrElemento)
         pthread_mutex_unlock(&mutexArquivo);
     }
 
+    //----------------------Destruindo respectiva unidade----------------------//
+
+    //Sinalizar que há um novo escritor
+    pthread_mutex_lock(&mutexTemEscritor);
+    temEscritor++;
+    pthread_mutex_unlock(&mutexTemEscritor);
+
+    //Remover e liberar unidade da thread. É necessário acesso exclusivo às lisats
+    pthread_mutex_lock(&mutexListas);
+    destruirUnidade(elemento.respectivaUnidade);
+    pthread_mutex_unlock(&mutexListas);
+
+    //Sinalizar que deixou de ser escritor
+    pthread_mutex_lock(&mutexTemEscritor);
+    temEscritor--;
+    pthread_mutex_unlock(&mutexTemEscritor);
+
+    //Acordar os leitores em espera
+    pthread_cond_signal(&condEscritor);
+
+    //Pode sair. Acabou para essa thread
     pthread_exit(NULL);
 }
 
 void* thrMonitora(void* args)
 {
+    //Variáveis locais
+    int qtdFogo;
+    int qtdAgua;
+    int qtdGrama;
 
+    //Dar largada as threads principais
+    largada = 1;
+    pthread_cond_signal(&condLargada);
+
+    //Verificar se deve interromper simulação
+    while(1)
+    {
+        //Requer mesmo tratamento de um escritor (acesso exclusivo às listas)
+        pthread_mutex_lock(&mutexTemEscritor);
+        temEscritor++;
+        pthread_mutex_unlock(&mutexTemEscritor);
+
+        //Pegando tamanho das listas
+        pthread_mutex_lock(&mutexListas);
+        qtdFogo = tamanho_lista(ListaFogo);
+        qtdAgua = tamanho_lista(ListaAgua);
+        qtdGrama = tamanho_lista(ListaGrama);
+        pthread_mutex_unlock(&mutexListas);
+
+        //Sinalizar que deixou de ser "escritor"
+        pthread_mutex_lock(&mutexTemEscritor);
+        temEscritor--;
+        pthread_mutex_unlock(&mutexTemEscritor);
+
+        //Acordar os leitores em espera
+        pthread_cond_signal(&condEscritor);
+
+        if(qtdFogo == NUMTHREADS || qtdAgua == NUMTHREADS || qtdGrama == NUMTHREADS)
+        {
+            pararSimulacao = 1;
+            break;
+        }
+    }
+
+    pthread_exit(NULL);
 }
