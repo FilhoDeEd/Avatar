@@ -99,6 +99,7 @@ int main()
     for(i = 0; i < NUMTHREADS; i++) pthread_join(threadsElementos[i],NULL);
     
     //Criando a thread monitora
+    
 
     //Fechando o arquivo
     fclose(arqRastro);
