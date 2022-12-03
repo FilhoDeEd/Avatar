@@ -64,6 +64,29 @@ void trocaUnidadeListas(Unidade *uni)
     }
 }
 
+//Crítico. Remove e libera uma unidade com base na cor e no ID
+void destruirUnidade(Unidade *uni)
+{
+    int ID = uni->dado.ID;
+    char cor = uni->dado.cor;
+
+    switch(cor)
+    {
+        case FOGO:
+                remove_uni_lista(ListaFogo,ID);
+                libera_unidade(uni);
+            break;
+        case AGUA:
+                remove_uni_lista(ListaAgua,ID);
+                libera_unidade(uni);
+            break;
+        case GRAMA:
+                remove_uni_lista(ListaGrama,ID);
+                libera_unidade(uni);
+            break;
+    }
+}
+
 void* thrElemento(void* argsThrElemento)
 {
     //Argumento
@@ -91,6 +114,8 @@ void* thrElemento(void* argsThrElemento)
     double forca[2];
     double forcaResultante[2];
     double aceleracao[2];
+    double moduloX;
+    double moduloY;
 
     //-----------------------------------------------------------------------------------//
 
@@ -253,6 +278,35 @@ void* thrElemento(void* argsThrElemento)
             //Atualizando a posição na respectiva unidade
         elemento.respectivaUnidade->dado.x = posicaoAtualElemento[0];
         elemento.respectivaUnidade->dado.y = posicaoAtualElemento[1];
+
+        //----------------------Verificar se partícula saiu da área de simulação----------------------//
+
+            //condição para ter saído da área de simulação
+            moduloX = modulo(posicaoAtualElemento[0]);
+            moduloY = modulo(posicaoAtualElemento[1]);
+            if(moduloX > LARGURA_TELA || moduloY > ALTURA_TELA)
+            {
+                //Sinalizar que há um novo escritor
+                pthread_mutex_lock(&mutexTemEscritor);
+                temEscritor++;
+                pthread_mutex_unlock(&mutexTemEscritor);
+
+                //Remover e liberar unidade da thread. É necessário acesso exclusivo às lisats
+                pthread_mutex_lock(&mutexListas);
+                destruirUnidade(elemento.respectivaUnidade);
+                pthread_mutex_unlock(&mutexListas);
+
+                //Sinalizar que deixou de ser escritor
+                pthread_mutex_lock(&mutexTemEscritor);
+                temEscritor--;
+                pthread_mutex_unlock(&mutexTemEscritor);
+
+                //Acordar os leitores em espera
+                pthread_cond_signal(&condEscritor);
+
+                //Pode sair. Acabou para essa thread
+                pthread_exit(NULL);
+            }
 
         //----------------------Escreve instância do ponto no arquivo----------------------//
 
