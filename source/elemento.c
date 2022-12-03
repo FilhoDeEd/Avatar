@@ -5,7 +5,7 @@
 #include "fisicaDinamica.h"
 
 //Algumas constantes do movimento
-#define RAIO 50.0
+#define RAIO 75.0
 #define MASSA 1
 #define ATRACAO 100.0
 #define REPULSAO 0.0
@@ -163,6 +163,10 @@ void* thrElemento(void* argsThrElemento)
     //Repita até a monitora interromper a simulação
     do
     {
+        pthread_mutex_lock(&mutexContador);
+        contador++;
+        pthread_mutex_unlock(&mutexContador);
+
         //----------------------Escreve instância do ponto no arquivo----------------------//
 
             //Acesso exclusivo para escrever no arquivo
@@ -270,6 +274,7 @@ void* thrElemento(void* argsThrElemento)
         //----------------------Verificar se partícula saiu da área de simulação----------------------//
 
             //condição para ter saído da área de simulação
+            
             X = posicaoAtualElemento[0];
             Y = posicaoAtualElemento[1];
             if(X > LARGURA_TELA || Y > ALTURA_TELA || X < 0 || Y < 0)
@@ -335,7 +340,8 @@ void* thrMonitora(void* args)
 
     printf("Fogo Perdeu = %i\n",fogoPerdeu);
     printf("Agua Perdeu = %i\n",aguaPerdeu);
-    printf("Grama Perdeu = %i",gramaPerdeu);
+    printf("Grama Perdeu = %i\n",gramaPerdeu);
+    printf("Contador = %i",contador);
 
     pthread_exit(NULL);
 }

@@ -13,7 +13,7 @@
 #define ALTURA_TELA 600.0
 
 //Numero de threads
-#define NUMTHREADS 6
+#define NUMTHREADS 15
 
 //Listas para armazenar a posição de todos os pontos
 Lista* ListaFogo;
@@ -46,5 +46,9 @@ void* thrElemento(void* argsThrElemento);
 
 //Rotina para monitorar e controlar a simulação
 void* thrMonitora(void* args);
+
+//Número de execuções
+pthread_mutex_t mutexContador;
+int contador;
 
 #endif /* ELEMENTO_H */

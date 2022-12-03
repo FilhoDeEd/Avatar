@@ -47,6 +47,9 @@ int main()
     largada = 0;
     pararSimulacao = 0;
 
+    pthread_mutex_init(&mutexContador,NULL);
+    contador = 0;
+
     //Abrindo o arquivo
     arqRastro = fopen("../source/rastrosElementos.csv","w");
     if(arqRastro == NULL)
