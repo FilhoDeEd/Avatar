@@ -7,10 +7,10 @@
 //Algumas constantes do movimento
 #define RAIO 10.0
 #define MASSA 5.0
-#define ATRACAO 1.0
+#define ATRACAO 10.0
 #define REPULSAO -0.1
-#define dt 0.042
-
+#define dt 1
+//0.042
 typedef struct elemento
 {
     Lista* elementoForteContra;
@@ -95,8 +95,8 @@ void* thrElemento(void* argsThrElemento)
 
     //Declarando e inicializando elemento
     Elemento elemento;
-    trocaElemento(corInicial,&elemento);
     elemento.respectivaUnidade = respectivaUnidade;
+    trocaElemento(corInicial,&elemento);
 
     //Variáveis locais
     Unidade* unidadeElementoFracoContra;
@@ -338,7 +338,7 @@ void* thrElemento(void* argsThrElemento)
     temEscritor++;
     pthread_mutex_unlock(&mutexTemEscritor);
 
-    //Remover e liberar unidade da thread. É necessário acesso exclusivo às lisats
+    //Remover e liberar unidade da thread. É necessário acesso exclusivo às listas
     pthread_mutex_lock(&mutexListas);
     destruirUnidade(elemento.respectivaUnidade);
     pthread_mutex_unlock(&mutexListas);
@@ -358,9 +358,10 @@ void* thrElemento(void* argsThrElemento)
 void* thrMonitora(void* args)
 {
     //Variáveis locais
-    int qtdFogo;
-    int qtdAgua;
-    int qtdGrama;
+    int fogoPerdeu = 0;
+    int aguaPerdeu = 0;
+    int gramaPerdeu = 0;
+    int qtdPerdedores = 0;
 
     //Dar largada as threads principais
     largada = 1;
@@ -369,27 +370,25 @@ void* thrMonitora(void* args)
     //Verificar se deve interromper simulação
     while(1)
     {
-        //Requer mesmo tratamento de um escritor (acesso exclusivo às listas)
-        pthread_mutex_lock(&mutexTemEscritor);
-        temEscritor++;
-        pthread_mutex_unlock(&mutexTemEscritor);
+        if(!fogoPerdeu && lista_vazia(ListaFogo))
+        {
+            fogoPerdeu = 1;
+            qtdPerdedores++;
+        }
 
-        //Pegando tamanho das listas
-        pthread_mutex_lock(&mutexListas);
-        qtdFogo = tamanho_lista(ListaFogo);
-        qtdAgua = tamanho_lista(ListaAgua);
-        qtdGrama = tamanho_lista(ListaGrama);
-        pthread_mutex_unlock(&mutexListas);
+        if(!aguaPerdeu && lista_vazia(ListaAgua))
+        {
+            aguaPerdeu = 1;
+            qtdPerdedores++;
+        }
 
-        //Sinalizar que deixou de ser "escritor"
-        pthread_mutex_lock(&mutexTemEscritor);
-        temEscritor--;
-        pthread_mutex_unlock(&mutexTemEscritor);
+        if(!gramaPerdeu && lista_vazia(ListaGrama))
+        {
+            gramaPerdeu = 1;
+            qtdPerdedores++;
+        }
 
-        //Acordar os leitores em espera
-        pthread_cond_signal(&condEscritor);
-
-        if(qtdFogo == NUMTHREADS || qtdAgua == NUMTHREADS || qtdGrama == NUMTHREADS)
+        if(qtdPerdedores == 2)
         {
             pararSimulacao = 1;
             break;

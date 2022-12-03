@@ -51,10 +51,10 @@ int main()
     pararSimulacao = 0;
 
     //Abrindo o arquivo
-    arqRastro = fopen("rastrosElementos.csv","w");
+    arqRastro = fopen("../source/rastrosElementos.csv","w");
     if(arqRastro == NULL)
     {
-        printf("Erro ao abrir 'rastrosElementos.csv'.\n");
+        printf("Erro ao criar 'rastrosElementos.csv'.\n");
         exit(EFILE);
     }
 
@@ -64,6 +64,7 @@ int main()
     //Criando as threads principais em posições iniciais aleatórias
     pthread_t threadsElementos[NUMTHREADS];
     Ponto randPonto;
+    Unidade* uni;
     int i;
 
     for(i = 0; i < NUMTHREADS/3; i++)
@@ -73,7 +74,9 @@ int main()
         //Primeiro quadrante
         randPonto.x = (float)rand()/(float)(RAND_MAX/LARGURA_TELA);
         randPonto.y = (float)rand()/(float)(RAND_MAX/ALTURA_TELA);
-        pthread_create(&threadsElementos[i],NULL,thrElemento,(void*)cria_unidade(randPonto));
+        uni = cria_unidade(randPonto);
+        insere_uni_lista_final(ListaFogo, uni);
+        pthread_create(&(threadsElementos[i]),NULL,thrElemento,(void*)uni);
     }
 
     for(i = NUMTHREADS/3; i < 2*NUMTHREADS/3; i++)
@@ -83,7 +86,9 @@ int main()
         //Segundo quadrante
         randPonto.x = (-1.0)*(float)rand()/(float)(RAND_MAX/LARGURA_TELA);
         randPonto.y = (float)rand()/(float)(RAND_MAX/ALTURA_TELA);
-        pthread_create(&threadsElementos[i],NULL,thrElemento,(void*)cria_unidade(randPonto));
+        uni = cria_unidade(randPonto);
+        insere_uni_lista_final(ListaAgua, uni);
+        pthread_create(&threadsElementos[i],NULL,thrElemento,(void*)uni);
     }
 
     for(i = 2*NUMTHREADS/3; i < NUMTHREADS; i++)
@@ -93,7 +98,9 @@ int main()
         //Terceiro quadrante
         randPonto.x = (-1.0)*(float)rand()/(float)(RAND_MAX/LARGURA_TELA);
         randPonto.y = (-1.0)*(float)rand()/(float)(RAND_MAX/ALTURA_TELA);
-        pthread_create(&threadsElementos[i],NULL,thrElemento,(void*)cria_unidade(randPonto));
+        uni = cria_unidade(randPonto);
+        insere_uni_lista_final(ListaGrama, uni);
+        pthread_create(&threadsElementos[i],NULL,thrElemento,(void*)uni);
     }
 
     //Chamando join para cada uma das threads principais
