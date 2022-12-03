@@ -61,7 +61,8 @@ int main()
     //Setando uma seed com base no tempo
     srand(time(NULL));
 
-    //Inicializando as threads principais em posições iniciais aleatórias
+    //Criando as threads principais em posições iniciais aleatórias
+    pthread_t threadsElementos[NUMTHREADS];
     Ponto randPonto;
     int i;
 
@@ -98,8 +99,10 @@ int main()
     //Chamando join para cada uma das threads principais
     for(i = 0; i < NUMTHREADS; i++) pthread_join(threadsElementos[i],NULL);
     
-    //Criando a thread monitora
-    
+    //Criando a thread monitora e dando join
+    pthread_t threadMonitora;
+    pthread_create(&threadMonitora,NULL,thrMonitora,NULL);
+    pthread_join(threadMonitora,NULL);
 
     //Fechando o arquivo
     fclose(arqRastro);
