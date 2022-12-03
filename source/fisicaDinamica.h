@@ -16,4 +16,7 @@ void calcula_posicao(double posicao[2], double velocidade[2], double dt);
 //Retorna a distância entre dois pontos
 double calcula_distancia(double posicao1[2], double posicao2[2]);
 
+//Retorna o modulo de valor
+double modulo(double valor);
+
 #endif /* FISICADINAMICA_H */

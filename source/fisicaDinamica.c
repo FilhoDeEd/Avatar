@@ -32,3 +32,8 @@ double calcula_distancia(double posicao1[2], double posicao2[2])
 
     return sqrt(pow(deltaX,2) + pow(deltaY,2));
 }
+
+double modulo(double valor)
+{
+    return fabs(valor);
+}
